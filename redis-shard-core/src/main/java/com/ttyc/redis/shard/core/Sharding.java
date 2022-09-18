@@ -81,20 +81,25 @@ public class Sharding {
 
     public ShardNode getShardNode(byte[] key) {
         ShardNode shardNode = this.getShard(SafeEncoder.encode(key));
-//        log.info("nodeName:{},nextNodeName:{}",shardNode.getName(),shardNode.getNext()==null?"":shardNode.getNext().getName());
+        if(log.isDebugEnabled()) {
+            log.debug("nodeName:{},nextNodeName:{}", shardNode.getName(), shardNode.getNext() == null ? "" : shardNode.getNext().getName());
+        }
         return shardNode;
     }
 
     public ShardNode getShardNode(String key) {
         ShardNode shardNode = this.getShard(key);
-//        log.info("key:{},nodeName:{},nextNodeName:{}",key,shardNode.getName(),shardNode.getNext()==null?"":shardNode.getNext().getName());
-
+        if(log.isDebugEnabled()) {
+            log.debug("key:{},nodeName:{},nextNodeName:{}", key, shardNode.getName(), shardNode.getNext() == null ? "" : shardNode.getNext().getName());
+        }
         return shardNode;
     }
 
     public ShardNode getNextShardNode(String key) {
         ShardNode shardNode = this.getNextShard(key);
-//        log.info("nextNodeName:{}",shardNode.getName());
+        if(log.isDebugEnabled()) {
+            log.debug("nextNodeName:{}", shardNode.getName());
+        }
         return shardNode;
     }
 
@@ -197,25 +202,25 @@ public class Sharding {
         ShardConfig shardConfig = new ShardConfig();
         Set<ShardNode> shardNodes = new HashSet<>();
         shardNodes.add(new ShardNode(){{
-            setName("SHARD-NODE-SINGLE-127.0.0.1:6379");
+            setName("SHARD-NODE-SINGLE-10.9.198.84:6379");
 //            setGray(true);
 //            setWeight(0);
         }});
         shardNodes.add(new ShardNode(){{
-            setName("SHARD-NODE-SINGLE-127.0.0.1:6380");
+            setName("SHARD-NODE-SINGLE-10.9.198.84:6380");
 //            setWeight(0);
         }});
         shardNodes.add(new ShardNode(){{
-            setName("SHARD-NODE-SINGLE-127.0.0.1:6381");
+            setName("SHARD-NODE-SINGLE-10.100.102.27:6379");
 //            setDoubleWriter(true);
 //            setWeight(0);
         }});
         shardNodes.add(new ShardNode(){{
-            setName("SHARD-NODE-SINGLE-127.0.0.1:6379");
+            setName("SHARD-NODE-SINGLE-10.9.198.255:6379");
 //            setWeight(0);
         }});
         shardNodes.add(new ShardNode(){{
-            setName("SHARD-NODE-SINGLE-127.0.0.1:6380");
+            setName("SHARD-NODE-SINGLE-10.9.198.255:6380");
 //            setWeight(0);
         }});
         Sharding sharding = new Sharding(shardNodes,shardConfig);
@@ -368,7 +373,7 @@ public class Sharding {
     }
 
     private String getNodeName(ShardNode shardNode){
-        return shardNode.getName()==null?("SHARD-NODE-"+ NodeTypeEnum.getCodeByType(shardNode.getNodeType())+"-"+shardNode.getAddresses()):shardNode.getName();
+        return shardNode.getName()==null?("SHARD-NODE-"+ NodeTypeEnum.getCodeByType(shardNode.getType())+"-"+shardNode.getAddresses()):shardNode.getName();
     }
 
     public String getShardNodeAddress(String key){

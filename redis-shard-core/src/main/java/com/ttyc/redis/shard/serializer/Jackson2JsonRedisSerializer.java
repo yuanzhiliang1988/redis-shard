@@ -83,7 +83,7 @@ public class Jackson2JsonRedisSerializer<T> implements RedisSerializer<T> {
 	}
 
 	public static void main(String[] args) {
-		String json = "{\"finishBatchIndex\":1,\"fromIndex\":0,\"fromNodes\":\"{\\\"addresses\\\":\\\"127.0.0.1:6380\\\"}\",\"lastBatchIndex\":0,\"scanLimit\":5,\"startTime\":159232617490000,\"status\":0,\"toIndex\":0,\"tranKeyRegex\":\"[\\\"test1_*\\\",\\\"test2_*\\\"]\",\"transLimit\":5}";
+		String json = "{\"finishBatchIndex\":1,\"fromIndex\":0,\"fromNodes\":\"{\\\"addresses\\\":\\\"10.9.198.84:6380\\\"}\",\"lastBatchIndex\":0,\"scanLimit\":5,\"startTime\":159232617490000,\"status\":0,\"toIndex\":0,\"tranKeyRegex\":\"[\\\"test1_*\\\",\\\"test2_*\\\"]\",\"transLimit\":5}";
 		System.out.println(StringUtils.substringBetween(json,"\"@type\":\"","\",\""));
 		ObjectMapper objectMapper = new ObjectMapper();
 		try {

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.ctrip.framework.apollo.Config;
 import com.ctrip.framework.apollo.ConfigService;
 import com.ctrip.framework.apollo.enums.PropertyChangeType;
+//import com.perf.redis.PerfRedisConnectionFactory;
 import com.ttyc.redis.shard.ShardBeanFactory;
 import com.ttyc.redis.shard.constant.ShardConstants;
 import com.ttyc.redis.shard.core.Sharding;
@@ -17,6 +18,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.lang.reflect.InvocationTargetException;
@@ -74,8 +76,12 @@ public abstract class AbstractHandler<T> implements Handler<T> {
     private void refreshOldNodes(Integer k, ShardNode v, Map<Integer, ShardNode> oldNodeMap, XRedisConnectionFactory xRedisConnectionFactory, Pool pool, ShardConfig shardConfig, ShardBeanFactory shardBeanFactory) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Node node = new Node();
         BeanUtils.copyProperties(v,node);
-        v.setConnectionFactory(xRedisConnectionFactory.jedisConnectionFactory(NodeTypeEnum.getEnum(v.getNodeType()),node,pool));
-        v.setName("SHARD-NODE-"+NodeTypeEnum.getCodeByType(v.getNodeType())+"-"+v.getAddresses());
+        //获取connection对象
+        JedisConnectionFactory jedisConnectionFactory = xRedisConnectionFactory.jedisConnectionFactory(NodeTypeEnum.getEnum(v.getType()),node,pool);
+        //接入perf监控组件
+//        PerfRedisConnectionFactory perfRedisConnectionFactory = new PerfRedisConnectionFactory(jedisConnectionFactory);
+        v.setConnectionFactory(jedisConnectionFactory);
+        v.setName("SHARD-NODE-"+NodeTypeEnum.getCodeByType(v.getType())+"-"+v.getAddresses());
         if(shardConfig!=null && StringUtils.isNotBlank(shardConfig.getSerializer())){
             //序列化
             this.setSerializer(shardConfig.getSerializer(),v, shardBeanFactory);
@@ -125,7 +131,11 @@ public abstract class AbstractHandler<T> implements Handler<T> {
             ShardNode shardNode = entry.getValue();
             Node node = new Node();
             BeanUtils.copyProperties(shardNode,node);
-            shardNode.setConnectionFactory(xRedisConnectionFactory.jedisConnectionFactory(NodeTypeEnum.getEnum(shardNode.getNodeType()),node,pool));
+            //获取connection对象
+            JedisConnectionFactory jedisConnectionFactory = xRedisConnectionFactory.jedisConnectionFactory(NodeTypeEnum.getEnum(shardNode.getType()),node,pool);
+            //接入perf监控组件
+//            PerfRedisConnectionFactory perfRedisConnectionFactory = new PerfRedisConnectionFactory(jedisConnectionFactory);
+            shardNode.setConnectionFactory(jedisConnectionFactory);
             shardNode.afterPropertiesSet();
             //替换原节点
             sharding.setShardNodesMap(entry.getKey(),shardNode);
@@ -188,10 +198,10 @@ public abstract class AbstractHandler<T> implements Handler<T> {
      * 公共方法：迁移
      */
     @SneakyThrows
-    public void transfer(){
+    public void transfer(Sharding sharding){
         List<Transfer> transfers = this.getTransfers(ConfigService.getAppConfig());
         TransferAction transferAction = new TransferAction();
-        transferAction.exec(transfers);
+        transferAction.exec(transfers,sharding);
         transfers.clear();
     }
 

@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.ttyc.redis.shard.constant.ShardConstants;
 import com.ttyc.redis.shard.enums.ExceptionMsgEnum;
 import com.ttyc.redis.shard.exception.RedisShardException;
-import com.ttyc.redis.shard.serializer.StringRedisSerializer;
 import com.ttyc.redis.shard.support.ShardNode;
 import com.ttyc.redis.shard.support.Transfer;
 import com.ttyc.redis.shard.transfer.TransferAction;
@@ -17,16 +16,11 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ScanOptions;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.RedisScript;
-import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +45,9 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class RedisShardClient<T> {
-    @Resource
+    /**
+     * 分片对象
+     */
     private Sharding sharding;
     /**
      * key的前缀，默认为服务应用名
@@ -59,12 +55,13 @@ public class RedisShardClient<T> {
     private static String keyPrefix;
     public static final RedisGeoCommands.GeoRadiusCommandArgs geoRadiusCommandArgs = RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs();
 
-    public RedisShardClient(String appName){
+    public RedisShardClient(String appName,Sharding sharding){
         keyPrefix = appName + ShardConstants.REDIS_KEY_SPLIT;
+        this.sharding = sharding;
     }
 
-    protected StringRedisSerializer stringRedisSerializer(){
-        return null;
+    public Sharding getSharding() {
+        return sharding;
     }
 
     /**
@@ -74,17 +71,10 @@ public class RedisShardClient<T> {
      */
     public ShardNode getShardNode(String key){
         ShardNode node = sharding.getShardNode(getShortKey(key));
-        this.setSerializer(node);
-
+        if(log.isDebugEnabled()) {
+            log.debug("shard client key:{},nodeName:{},nextNodeName:{}", key, node.getName(), node.getNext() == null ? "" : node.getNext().getName());
+        }
         return node;
-    }
-
-    private void setSerializer(ShardNode shardNode){
-        RedisSerializer redisSerializer = stringRedisSerializer()!=null?stringRedisSerializer():shardNode.getDefaultSerializer();
-        shardNode.setValueSerializer(redisSerializer);
-        shardNode.setHashValueSerializer(redisSerializer);
-
-//        shardNode.afterPropertiesSet();
     }
 
     /**
@@ -106,20 +96,16 @@ public class RedisShardClient<T> {
      */
     public ShardNode getNextShardNode(String key){
         ShardNode node = sharding.getNextShardNode(getShortKey(key));
-        this.setSerializer(node);
 
         return node;
     }
 
     public List<ShardNode> getAllShardNodes(){
-        return new ArrayList<>(sharding.getShardNodeMap().values().stream().peek(node -> {
-            this.setSerializer(node);
-        }).collect(Collectors.toList()));
+        return new ArrayList<>(sharding.getShardNodeMap().values().stream().collect(Collectors.toList()));
     }
 
     public ShardNode getShardNode(Integer index){
         ShardNode node = sharding.getShardNodeByIndex(index);
-        this.setSerializer(node);
 
         return node;
     }
@@ -281,7 +267,9 @@ public class RedisShardClient<T> {
         if(shardNode.isGray()){
             return (T)shardNode.getNext().opsForValue().get(getShardKey(key));
         }
-        return (T)shardNode.opsForValue().get(getShardKey(key));
+        T t = (T)shardNode.opsForValue().get(getShardKey(key));
+
+        return t;
     }
 
     /**
@@ -839,16 +827,16 @@ public class RedisShardClient<T> {
     /**
      * 将list放入缓存
      * @param key 键
-     * @param value 值
+     * @param values 值
      * @return
      */
-    public boolean lset(String key, List<Object> value) {
+    public boolean lsetAll(String key, List<T> values) {
         try {
             ShardNode shardNode = this.getShardNode(key);
             if(shardNode.isGray() || shardNode.isDoubleWriter()){
-                shardNode.getNext().opsForList().rightPushAll(getShardKey(key), value);
+                shardNode.getNext().opsForList().rightPushAll(getShardKey(key), values);
             }
-            shardNode.opsForList().rightPushAll(getShardKey(key), value);
+            shardNode.opsForList().rightPushAll(getShardKey(key), values);
             return true;
         } catch (Exception e) {
             log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
@@ -863,7 +851,7 @@ public class RedisShardClient<T> {
      * @param time 时间(秒)
      * @return
      */
-    public boolean lset(String key, List<Object> value, long time) {
+    public boolean lsetAll(String key, List<T> value, long time) {
         try {
             ShardNode shardNode = this.getShardNode(key);
             if(shardNode.isGray() || shardNode.isDoubleWriter()){
@@ -955,6 +943,114 @@ public class RedisShardClient<T> {
     }
 
     //===============================zset=================================
+    public boolean zAdd(String key, double score, Object value) {
+        try {
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().add(getShardKey(key), value,score);
+            }
+            return shardNode.opsForZSet().add(getShardKey(key), value,score);
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            return false;
+        }
+    }
+
+    public boolean zAdd(String key, double score, Object value, long time) {
+        try {
+            this.zAdd(key,score,value);
+            if (time > 0) expire(key, time);
+            return true;
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            throw new RedisShardException(ExceptionMsgEnum.SHARD_OP_EXCEPTION,e);
+        }
+    }
+
+    public long zAddList(String key, Map<Double,Object> values) {
+        try {
+            Set<ZSetOperations.TypedTuple<Object>> tuples = new HashSet<>();
+            Iterator<Map.Entry<Double,Object>> iterator = values.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Double,Object> entry = iterator.next();
+                Double score = entry.getKey();
+                Object value = entry.getValue();
+                ZSetOperations.TypedTuple<Object> tuple = new DefaultTypedTuple<Object>(value, score);
+                tuples.add(tuple);
+            }
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().add(getShardKey(key), tuples);
+            }
+            return shardNode.opsForZSet().add(getShardKey(key), tuples);
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            throw new RedisShardException(ExceptionMsgEnum.SHARD_OP_EXCEPTION,e);
+        }
+    }
+
+    public long zAddList(String key, Map<Double,Object> values, long time) {
+        try {
+            long num = this.zAddList(key,values);
+            if (time > 0) expire(key, time);
+            return num;
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            throw new RedisShardException(ExceptionMsgEnum.SHARD_OP_EXCEPTION,e);
+        }
+    }
+
+    public long zsize(String key) {
+        try {
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().size(getShardKey(key));
+            }
+            return shardNode.opsForZSet().size(getShardKey(key));
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            return 0;
+        }
+    }
+
+    public long remove(String key,Object... objects) {
+        try {
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().remove(getShardKey(key),objects);
+            }
+            return shardNode.opsForZSet().remove(getShardKey(key),objects);
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            return 0;
+        }
+    }
+
+    public long zRemoveRange(String key,long start,long end) {
+        try {
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().removeRange(getShardKey(key),start,end);
+            }
+            return shardNode.opsForZSet().removeRange(getShardKey(key),start,end);
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            return 0;
+        }
+    }
+
+    public long zRemoveRangeByScore(String key,double start,double end) {
+        try {
+            ShardNode shardNode = this.getShardNode(key);
+            if(shardNode.isGray()){
+                return shardNode.opsForZSet().removeRangeByScore(getShardKey(key),start,end);
+            }
+            return shardNode.opsForZSet().removeRangeByScore(getShardKey(key),start,end);
+        } catch (Exception e) {
+            log.error(ExceptionMsgEnum.SHARD_OP_EXCEPTION.getMessage(),e);
+            return 0;
+        }
+    }
 
     /**
      * 分片查询zset，按score升序排序返回value
@@ -1026,7 +1122,7 @@ public class RedisShardClient<T> {
      * @param params
      * @return
      */
-    public List<Object> lua(RedisScript redisScript, String key, String... params) {
+    public List<Object> lua(RedisScript redisScript, String key, Object... params) {
         List<Object> list = new ArrayList<>();
         long start = System.currentTimeMillis();
         ShardNode shardNode = this.getShardNode(key);
@@ -1035,8 +1131,9 @@ public class RedisShardClient<T> {
         if(shardNode.isGray() || shardNode.isDoubleWriter()) {
             shardNode.getNext().execute(redisScript, shardNode.getValueSerializer(),shardNode.getStringSerializer(),Lists.newArrayList(getShardKey(key)), params);
         }
-
-        log.info("runLua: {},time: {}",redisScript.getResultType(), (System.currentTimeMillis() - start));
+        if(log.isDebugEnabled()) {
+            log.debug("runLua: {},time: {}", redisScript.getResultType(), (System.currentTimeMillis() - start));
+        }
 
         return list;
     }
@@ -1072,7 +1169,9 @@ public class RedisShardClient<T> {
             }
             list.add(object);
         });
-        log.info("runLua: {},time: {}",redisScript.getResultType(), (System.currentTimeMillis() - start));
+        if(log.isDebugEnabled()) {
+            log.debug("runLua: {},time: {}", redisScript.getResultType(), (System.currentTimeMillis() - start));
+        }
 
         return list;
     }
@@ -1099,7 +1198,7 @@ public class RedisShardClient<T> {
         List<String> preKeysNew = preKeys.stream().map(p->getShardKey(p)).collect(Collectors.toList());
 
         getShardNodes(keys).forEach((gnode,gkeys)->{
-//            log.info("gnode addresses:{},gkeys:{}",gnode.getAddresses(),JSON.toJSONString(gkeys));
+//            log.info("gnode addresses:{},valueSerializer:{},gkeys:{}",gnode.getAddresses(),gnode.getValueSerializer(),JSON.toJSONString(gkeys));
             //有序的map
             LinkedHashMap<String,List<Object>> groupListMap = new LinkedHashMap<>();
             for(String preKey:preKeys){
@@ -1122,7 +1221,9 @@ public class RedisShardClient<T> {
             groupListMap.clear();
             list.add(object);
         });
-        log.info("runLua: {},time: {}",redisScript.getResultType(), (System.currentTimeMillis() - start));
+        if(log.isDebugEnabled()) {
+            log.debug("runLua: {},time: {}", redisScript.getResultType(), (System.currentTimeMillis() - start));
+        }
 
         return list;
     }
@@ -1143,7 +1244,9 @@ public class RedisShardClient<T> {
             shardNode.getNext().execute(redisScript, shardNode.getValueSerializer(),shardNode.getStringSerializer(),keys, params);
         }
 
-        log.info("runLua: {},time: {}",redisScript.getResultType(), (System.currentTimeMillis() - start));
+        if(log.isDebugEnabled()) {
+            log.debug("runLua: {},time: {}", redisScript.getResultType(), (System.currentTimeMillis() - start));
+        }
 
         return list;
     }
@@ -1158,7 +1261,7 @@ public class RedisShardClient<T> {
         transfers.add(transfer);
 
         TransferAction transferAction = new TransferAction();
-        transferAction.client(transfers);
+        transferAction.client(transfers,this.sharding);
 
         transfers.clear();
         log.info("end transfer.....");

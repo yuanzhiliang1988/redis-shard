@@ -25,7 +25,7 @@ public class KryoRedisSerializer<T> extends AbstractRedisSerializer<T> {
     }
 
     @Override
-    public byte[] serialize(T t) throws org.springframework.data.redis.serializer.SerializationException {
+    public byte[] serialize(T t) throws SerializationException {
         if (t == null) {
             return SerializationUtils.EMPTY_ARRAY;
         }
@@ -48,7 +48,7 @@ public class KryoRedisSerializer<T> extends AbstractRedisSerializer<T> {
     }
 
     @Override
-    public T deserialize(byte[] bytes) throws org.springframework.data.redis.serializer.SerializationException {
+    public T deserialize(byte[] bytes) throws SerializationException {
         if (SerializationUtils.isEmpty(bytes)) {
             return null;
         }

@@ -12,7 +12,8 @@ public enum ExceptionMsgEnum {
     SCAN_EXCEPTION(20005, "scan操作异常"),
     GET_JEDIS_FACTORY_FAIL(20006, "get JedisConnectionFactory fail"),
     NODE_NOT_EXISTS(20007, "节点不存在"),
-    SHARD_OP_EXCEPTION(20008, "节点操作异常");
+    SHARD_OP_EXCEPTION(20008, "节点操作异常"),
+    SHARD_BEAN_FACTORY_NULL(20009, "shardBeanFactory不能为空");
 
     private int code;
     private String message;

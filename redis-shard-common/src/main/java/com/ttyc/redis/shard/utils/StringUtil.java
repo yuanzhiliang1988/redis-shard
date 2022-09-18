@@ -50,6 +50,28 @@ public class StringUtil {
         }
     }
 
+    public static void setFieldNull(Object obj,String fileName){
+        try {
+            Field field = obj.getClass().getDeclaredField(fileName);
+            field.setAccessible(true);
+            if(field.getType().equals(List.class)){
+                field.set(obj,new ArrayList<>(0));
+            }else if(field.getType().equals(Boolean.class)){
+                field.set(obj,false);
+            }else if(field.getType().equals(Long.class)){
+                field.set(obj,0L);
+            }else if(field.getType().equals(Integer.class)){
+                field.set(obj,Integer.parseInt(0+""));
+            }else{
+                field.set(obj,"");
+            }
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e){
+            e.printStackTrace();
+        }
+    }
+
     /**
      * 将list按quantity切分为若干list分组
      *
@@ -59,7 +81,7 @@ public class StringUtil {
      */
     public static <T> List<List<T>> groupListByLimit(final List<T> list, int limit) {
         if (limit <= 0) {
-            new IllegalArgumentException("Wrong limit.");
+            throw new IllegalArgumentException("Wrong limit.");
         }
         List<List<T>> wrapList = null;
         if (list != null && list.size() > 0) {

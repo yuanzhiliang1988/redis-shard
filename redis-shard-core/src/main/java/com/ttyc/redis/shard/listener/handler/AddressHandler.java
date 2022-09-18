@@ -36,6 +36,6 @@ public class AddressHandler extends AbstractHandler<Object>{
         //刷新节点
         this.refreshShardNodes(sharding,oldNodeMap,newNodesMap);
         //迁移
-        this.transfer();
+        this.transfer(sharding);
     }
 }

@@ -40,7 +40,10 @@ class RedisShardClientOpsZsetTest {
 
     @Test
     void rangeByScoreWithScores() {
-        Set<ZSetOperations.TypedTuple<Object>> objects = redisShardClient.rangeByScoreWithScores("transfer_keys",1000001,1000001);
+        String redisKey = "redis-shard@@track_zset_811624100";
+        log.info("aaa:"+JSON.toJSONString(redisShardClient.getShardNode(redisKey).opsForZSet().rangeWithScores(redisKey,0,0)));
+        log.info("aaa:"+JSON.toJSONString(redisShardClient.getShardNode(redisKey).opsForZSet().range(redisKey,0,0)));
+        Set<ZSetOperations.TypedTuple<Object>> objects = redisShardClient.rangeByScoreWithScores("track_zset_811624100",0,0);
         log.info("objects:{}",JSON.toJSONString(objects));
         for(ZSetOperations.TypedTuple<Object> typedTuple:objects){
             List<String> keys = (List)typedTuple.getValue();
@@ -48,5 +51,11 @@ class RedisShardClientOpsZsetTest {
             log.info("key:{}",keys.get(0));
             log.info("scores:{}",typedTuple.getScore());
         }
+    }
+
+    @Test
+    void zRemoveRangeByScore(){
+        long removeNum = stringRedisShardClient.zRemoveRangeByScore("geo-reporter@@track_zset_811624100",-1,Double.parseDouble("1634192237977"));
+        log.info("removeNum:{}",removeNum);
     }
 }

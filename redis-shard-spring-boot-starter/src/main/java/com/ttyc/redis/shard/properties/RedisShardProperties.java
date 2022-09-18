@@ -19,11 +19,11 @@ public class RedisShardProperties {
     /**
      * 分片节点
      * 使用方式：
-     * redis.shard.nodes[0].addresses=127.0.0.1:6379
-     * redis.shard.nodes[1].addresses=127.0.0.1:6381
+     * redis.shard.nodes[0].addresses=10.9.198.84:6379
+     * redis.shard.nodes[1].addresses=10.100.102.27:6379
      * redis.shard.nodes[1].password=PiC8Ou_mZSU7
-     * redis.shard.nodes[2].addresses=127.0.0.1:6380
-     * redis.shard.nodes[3].addresses=127.0.0.1:6382
+     * redis.shard.nodes[2].addresses=10.9.198.84:6380
+     * redis.shard.nodes[3].addresses=10.9.188.145:6379
      */
     private LinkedList<Node> nodes;
     /**

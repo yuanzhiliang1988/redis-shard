@@ -13,7 +13,8 @@ public enum ConfigInfoEnum {
     SERIALIZER("serializer","双写","config"),
     KEY_REGEX("key-regex","双写","config"),
     POOL("pool","连接池","pool"),
-    TRANSFER("transfer","迁移","transfer");
+    TRANSFER("transfer","迁移","transfer"),
+    LOGGING("logging","日志","logging");
 
     private String code;
     private String name;

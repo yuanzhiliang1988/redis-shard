@@ -27,6 +27,6 @@ public class TransferHandler extends AbstractHandler<Transfer>{
     @Override
     public void doBusiness(Sharding sharding,List<PropertyChangeType> changeTypes,Transfer oldTran,Transfer newTran) {
         //设置配置
-        this.transfer();
+        this.transfer(sharding);
     }
 }

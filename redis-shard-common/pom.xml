@@ -5,7 +5,7 @@
     <parent>
         <artifactId>redis-shard</artifactId>
         <groupId>com.ttyc.redis.shard</groupId>
-        <version>2.0</version>
+        <version>2.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,10 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections-spring</artifactId>
-
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
     </dependencies>
 

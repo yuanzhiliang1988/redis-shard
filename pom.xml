@@ -8,7 +8,7 @@
     <groupId>com.ttyc.redis.shard</groupId>
     <artifactId>redis-shard</artifactId>
     <packaging>pom</packaging>
-    <version>2.0</version>
+    <version>2.6-SNAPSHOT</version>
 
     <name>redis-shard</name>
     <description>redis分片组件</description>
@@ -31,8 +31,10 @@
         <kryo.version>3.0.3</kryo.version>
         <protostuff.version>1.7.2</protostuff.version>
         <commons-lang3.version>3.7</commons-lang3.version>
-        <apollo.version>1.2.0</apollo.version>
+        <apollo.version>1.7.0</apollo.version>
         <reflections.version>0.9.9-RC1</reflections.version>
+        <component-log-level.version>1.2</component-log-level.version>
+<!--        <perf-component.version>4.0.5-RELEASE</perf-component.version>-->
     </properties>
 
     <parent>
@@ -89,6 +91,17 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.perf.component</groupId>-->
+<!--                <artifactId>perf-component-redis</artifactId>-->
+<!--                <version>${perf-component.version}</version>-->
+<!--                <exclusions>-->
+<!--                    <exclusion>-->
+<!--                        <artifactId>guava</artifactId>-->
+<!--                        <groupId>com.google.guava</groupId>-->
+<!--                    </exclusion>-->
+<!--                </exclusions>-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 
@@ -134,18 +147,23 @@
             <artifactId>commons-lang3</artifactId>
             <version>${commons-lang3.version}</version>
         </dependency>
+        <!--<dependency>
+            <groupId>com.ttyc.lbs.components</groupId>
+            <artifactId>component-log-level-spring-boot-starter</artifactId>
+            <version>${component-log-level.version}</version>
+        </dependency>-->
     </dependencies>
 
     <distributionManagement>
         <repository>
             <id>releases</id>
             <name>Internal Releases</name>
-            <url>http://xxxxx/nexus/content/repositories/releases</url>
+            <url>http://maven.corp.songguo7.com:8360/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
             <name>Internal Snapshots</name>
-            <url>http://xxxxx/nexus/content/repositories/snapshots</url>
+            <url>http://maven.corp.songguo7.com:8360/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 

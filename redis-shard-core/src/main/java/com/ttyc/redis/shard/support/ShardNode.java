@@ -13,6 +13,10 @@ import java.util.List;
  */
 public class ShardNode extends XRedisTemplate implements Serializable {
     /**
+     * 节点类型，NodeTypeEnum
+     */
+    private Integer type= NodeTypeEnum.SINGLE.getType();
+    /**
      * 节点名称
      */
     private String name;
@@ -25,9 +29,13 @@ public class ShardNode extends XRedisTemplate implements Serializable {
      */
     private String password;
     /**
-     * 节点类型，NodeTypeEnum
+     * 数据库索引 默认:0
      */
-    private Integer nodeType= NodeTypeEnum.SINGLE.getType();
+    private Integer database=0;
+    /**
+     * Whether to enable SSL support.
+     */
+    private Boolean ssl;
     /**
      * 虚拟节点数权重，默认160，分片节点数=160*weight
      */
@@ -77,12 +85,12 @@ public class ShardNode extends XRedisTemplate implements Serializable {
         this.name = name;
     }
 
-    public Integer getNodeType() {
-        return nodeType;
+    public Integer getType() {
+        return type;
     }
 
-    public void setNodeType(Integer nodeType) {
-        this.nodeType = nodeType;
+    public void setType(Integer type) {
+        this.type = type;
     }
 
     public Integer getWeight() {
@@ -155,5 +163,21 @@ public class ShardNode extends XRedisTemplate implements Serializable {
 
     public void setTranKeyRegex(List<String> tranKeyRegex) {
         this.tranKeyRegex = tranKeyRegex;
+    }
+
+    public Integer getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(Integer database) {
+        this.database = database;
+    }
+
+    public Boolean getSsl() {
+        return ssl;
+    }
+
+    public void setSsl(Boolean ssl) {
+        this.ssl = ssl;
     }
 }

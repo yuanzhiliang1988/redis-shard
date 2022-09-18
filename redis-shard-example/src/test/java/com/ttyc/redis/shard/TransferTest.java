@@ -26,6 +26,7 @@ class TransferTest {
     static {
         //该方法设置vm启动参数
         System.setProperty("spring.profiles.active", "dev");
+        System.setProperty("apollo.meta", "http://dev-apollo.in.songguo7.com:8080");
         System.setProperty("apollo.cacheDir", "/redis-shard/config-cache");
     }
 
@@ -35,7 +36,7 @@ class TransferTest {
     @Test
     void transfer() {
         AbstractHandler abstractHandler = new TransferHandler();
-        abstractHandler.transfer();
+        abstractHandler.transfer(null);
     }
 
     /**
@@ -47,7 +48,7 @@ class TransferTest {
         Transfer transfer = new Transfer();
         transfer.setToIndex(0);
         JSONObject fromNode = new JSONObject();
-        fromNode.put("addresses","120.0.0.1:6380");
+        fromNode.put("addresses","10.9.198.84:6380");
         transfer.setFromNodes(fromNode.toJSONString());
 
         redisShardClient.transfer(transfer);
@@ -63,8 +64,8 @@ class TransferTest {
         tranKey.add("test2_*");
         transfer.setTranKeyRegex(JSON.toJSONString(tranKey));
         JSONObject fromNode = new JSONObject();
-        fromNode.put("addresses","120.0.0.1:6379");
-        fromNode.put("password","admin");
+        fromNode.put("addresses","10.100.102.27:6379");
+        fromNode.put("password","PiC8Ou_mZSU7");
         fromNode.put("serializer","string");
         transfer.setFromNodes(fromNode.toJSONString());
 

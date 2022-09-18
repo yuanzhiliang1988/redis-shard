@@ -5,7 +5,6 @@ import com.ttyc.redis.shard.enums.NodeTypeEnum;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
@@ -27,12 +26,6 @@ public class Node extends ShardConfig implements Serializable{
     private int database = 0;
 
     /**
-     * Connection URL. Overrides host, port, and password. User is ignored. Example:
-     * redis://user:password@example.com:6379
-     */
-    private String url;
-
-    /**
      * Redis server host and port.
      */
     private String addresses = "127.0.0.1:6379";
@@ -46,11 +39,6 @@ public class Node extends ShardConfig implements Serializable{
      * Whether to enable SSL support.
      */
     private boolean ssl;
-
-    /**
-     * Connection timeout.
-     */
-    private Duration timeout;
 
     /**
      * 灰度分片：扩容时需要配置该值，灰度时默认双写，灰度节点只冗余数据，不对外提供服务，不配置灰度，则默认正式分片对外提供读写
@@ -71,14 +59,6 @@ public class Node extends ShardConfig implements Serializable{
         this.database = database;
     }
 
-    public String getUrl() {
-        return this.url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public String getPassword() {
         return this.password;
     }
@@ -93,14 +73,6 @@ public class Node extends ShardConfig implements Serializable{
 
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
-    }
-
-    public void setTimeout(Duration timeout) {
-        this.timeout = timeout;
-    }
-
-    public Duration getTimeout() {
-        return this.timeout;
     }
 
     public int getType() {
